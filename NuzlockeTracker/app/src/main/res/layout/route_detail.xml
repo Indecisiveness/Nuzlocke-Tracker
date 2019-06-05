@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/route_detail"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:textIsSelectable="true"
+    tools:context=".RouteDetailFragment">
+
+    <RadioGroup
+        android:id="@+id/PokemonRadios"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:layout_editor_absoluteX="16dp"
+        tools:layout_editor_absoluteY="16dp" >
+
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/addPoke"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="capture"
+        android:text="Capture"
+        app:layout_constraintTop_toBottomOf="@id/AlreadyGot"
+        tools:layout_editor_absoluteX="16dp" />
+
+    <Button
+        android:id="@+id/loseRoute"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="KO"
+        android:text="KO"
+        app:layout_constraintLeft_toRightOf="@id/addPoke"
+        app:layout_constraintTop_toBottomOf="@id/AlreadyGot" />
+
+    <RadioGroup
+        android:id="@+id/AlreadyGot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/PokemonRadios"
+        tools:layout_editor_absoluteX="32dp" />
+
+</android.support.constraint.ConstraintLayout>
