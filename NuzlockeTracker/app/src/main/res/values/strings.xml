@@ -4,4 +4,8 @@
     <string name="title_route_list">Routes</string>
     <string name="title_route_detail">Route Detail</string>
     <string name="title_activity_main2">Main2Activity</string>
+    <string name="title_activity_pokemon_detail_screen">PokemonDetailScreen</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
 </resources>

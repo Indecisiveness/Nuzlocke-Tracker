@@ -8,9 +8,15 @@
     tools:context=".Main2Activity"
     tools:showIn="@layout/activity_main2">
 
-    <TextView
-        android:id="@+id/AllPokemon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Blank" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/PokeContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
 </android.support.constraint.ConstraintLayout>

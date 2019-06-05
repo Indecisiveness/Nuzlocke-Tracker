@@ -1,6 +1,8 @@
 package com.example.nuzlocketracker;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -8,12 +10,23 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import javax.net.ssl.HttpsURLConnection;
+
 public class Main2Activity extends AppCompatActivity {
+
+    View.OnClickListener myClick;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,6 +34,12 @@ public class Main2Activity extends AppCompatActivity {
         setContentView(R.layout.activity_main2);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        myClick = new View.OnClickListener() {
+            public void onClick(View v) {
+                goPokemon(v);
+            }
+        };
 
         fillSpace();
 
@@ -34,26 +53,45 @@ public class Main2Activity extends AppCompatActivity {
         });
     }
 
+    public void goPokemon(View v){
+        Button b = (Button)v;
+        String name = b.getText().toString();
+        Intent goPoke = new Intent(this,PokemonDetailScreen.class);
+        goPoke.putExtra("name",name);
+        startActivity(goPoke);
+    }
+
     private void fillSpace(){
-        TextView myText = (TextView) findViewById(R.id.AllPokemon);
+        LinearLayout myBox = findViewById(R.id.PokeContainer);
         SharedPreferences global = getSharedPreferences("Current", 0);
         SharedPreferences myPokes = getSharedPreferences((global.getString("recent","")),0);
         Log.d("FileName", global.getString("recent",""));
 
         HashSet<String> empty = new HashSet<>();
-        HashSet<String> allPokenames =(HashSet<String>) myPokes.getStringSet("catches",empty);
-        StringBuilder s = new StringBuilder();
+        HashSet<String> allPokenames = new HashSet<>(myPokes.getStringSet("catches",empty));
 
+        HashSet<String> deadPokenames = new HashSet<>(myPokes.getStringSet("deaths",empty));
 
-        Iterator<String> seqPoke = allPokenames.iterator();
+        for (String name: allPokenames){
 
-        while(seqPoke.hasNext()){
-            String name = seqPoke.next();
-            Log.d("Pokename",name);
-            s.append(name);
+            if (!deadPokenames.contains(name)) {
+                Button pokeButton = new Button(this);
+                pokeButton.setText(name);
+                pokeButton.setOnClickListener(myClick);
+                myBox.addView(pokeButton);
+            }
         }
-        myText.setText(s);
+
+        for (String name:deadPokenames){
+            TextView deadPoke = new TextView(this);
+            deadPoke.setText(name);
+            myBox.addView(deadPoke);
+        }
+
+
+
     }
+
 
 
 }

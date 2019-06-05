@@ -279,6 +279,11 @@ public void openParty(View view){
                     scan.close();
                     JSONObject version = new JSONObject(jsonString);
                     JSONObject versGroup = (JSONObject) version.get("version_group");
+                    String versGroupName = versGroup.getString("name");
+                    SharedPreferences.Editor gEd = global.edit();
+                    gEd.putString("versGroup",versGroupName);
+                    gEd.commit();
+
                     URL versURL = new URL(versGroup.getString("url"));
                     HttpsURLConnection subCon = (HttpsURLConnection) versURL.openConnection();
                     if (subCon.getResponseCode() == 200) {
