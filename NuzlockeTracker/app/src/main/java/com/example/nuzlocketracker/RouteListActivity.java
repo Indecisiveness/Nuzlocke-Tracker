@@ -11,10 +11,14 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.text.Editable;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -38,6 +42,8 @@ import java.util.TreeSet;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import static android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS;
+import static android.text.TextUtils.CAP_MODE_WORDS;
 import static com.example.nuzlocketracker.RouteDetailFragment.ARG_ITEM_ID;
 
 /**
@@ -120,6 +126,7 @@ public class RouteListActivity extends AppCompatActivity {
                     Bundle arguments = new Bundle();
                     arguments.putString(RouteDetailFragment.ARG_ITEM_ID, item.name);
                     arguments.putString(RouteDetailFragment.ARG_URL_ID, item.locURL);
+                    arguments.putBoolean(RouteDetailFragment.ARG_BOOL_ID,item.caught);
                     RouteDetailFragment fragment = new RouteDetailFragment();
                     fragment.setArguments(arguments);
                     mParentActivity.getSupportFragmentManager().beginTransaction()
@@ -130,6 +137,7 @@ public class RouteListActivity extends AppCompatActivity {
                     Intent intent = new Intent(context, RouteDetailActivity.class);
                     intent.putExtra(RouteDetailFragment.ARG_ITEM_ID, item.name);
                     intent.putExtra(RouteDetailFragment.ARG_URL_ID, item.locURL);
+                    intent.putExtra(RouteDetailFragment.ARG_BOOL_ID,item.caught);
 
                     context.startActivity(intent);
                 }
@@ -154,8 +162,28 @@ public class RouteListActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
-            holder.mIdView.setText(mValues[position].name);
-            holder.mContentView.setText(Boolean.toString(mValues[position].caught));
+
+
+            char[] cleanText = mValues[position].name.toCharArray();
+            cleanText[0] = Character.toUpperCase(cleanText[0]);
+            for (int i = 0; i<cleanText.length;i++){
+                if (cleanText[i] == '-'){
+                    cleanText[i] = ' ';
+                    cleanText[i+1] = Character.toUpperCase(cleanText[i+1]);
+                }
+            }
+
+
+            holder.mIdView.setText(new String(cleanText));
+
+            if (mValues[position].caught){
+                holder.mContentView.setChecked(true);
+            }
+            else {
+                holder.mContentView.setChecked(false);
+            }
+
+
 
             holder.itemView.setTag(mValues[position]);
             holder.itemView.setOnClickListener(mOnClickListener);
@@ -168,35 +196,36 @@ public class RouteListActivity extends AppCompatActivity {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             final TextView mIdView;
-            final TextView mContentView;
+            final CheckBox mContentView;
 
             ViewHolder(View view) {
                 super(view);
                 mIdView = (TextView) view.findViewById(R.id.id_text);
-                mContentView = (TextView) view.findViewById(R.id.content);
+                mContentView = view.findViewById(R.id.checkBox);
             }
         }
     }
 
     public void capture(View button){
-        Log.d("RLA", "capture");
 
         HashSet<String> empty = new HashSet<>();
         HashSet<String> routes = new HashSet<>();
         HashSet<String> pokemon = new HashSet<>();
+
+        HashSet<String> livePoke = new HashSet<>();
+
         pokemon.addAll(saveFile.getStringSet("catches", empty));
+        livePoke.addAll(saveFile.getStringSet("live",empty));
 
         RadioGroup pokeRadio = findViewById(R.id.PokemonRadios);
         RadioButton pickedPoke = pokeRadio.findViewById(pokeRadio.getCheckedRadioButtonId());
         if(pickedPoke!=null) {
-            Log.d("PickedPoke", pickedPoke.getText().toString());
             pokemon.add(pickedPoke.getText().toString());
+            livePoke.add(pickedPoke.getText().toString());
         }
 
         routes.addAll(saveFile.getStringSet("routeList", empty));
         String routeName = global.getString("currRoute","");
-
-        Log.d("RouteName", routeName);
 
         routes.add(routeName);
 
@@ -204,22 +233,20 @@ public class RouteListActivity extends AppCompatActivity {
         SharedPreferences.Editor saveEdit = saveFile.edit();
         saveEdit.putStringSet("catches",pokemon);
         saveEdit.putStringSet("routeList", routes);
+        saveEdit.putStringSet("live",livePoke);
 
         saveEdit.commit();
-
-        SharedPreferences current = getSharedPreferences("Current",0);
-        SharedPreferences.Editor curEd = current.edit();
-        curEd.putStringSet("catches",pokemon);
-        curEd.putStringSet("routeList",routes);
-
-        curEd.commit();
-
 
 
         Route rt = currRoute.get(routeName);;
         rt.caught = true;
         currRoute.put(routeName,rt);
         setupRecyclerView((RecyclerView)findViewById(R.id.route_list));
+
+        Intent goPoke = new Intent(this, PokemonDetailScreen.class);
+        goPoke.putExtra("name",pickedPoke.getText().toString());
+        startActivity(goPoke);
+
 
     }
 
@@ -228,18 +255,18 @@ public class RouteListActivity extends AppCompatActivity {
         HashSet<String> routes = new HashSet<>();
 
         routes.addAll(saveFile.getStringSet("routeList",empty));
-        routes.add(global.getString("currRoute",""));
-
+        String routeName = global.getString("currRoute","");
+        routes.add(routeName);
         SharedPreferences.Editor saveEdit = saveFile.edit();
         saveEdit.putStringSet("routeList", routes);
 
         saveEdit.commit();
 
-        SharedPreferences current = getSharedPreferences("Current",0);
-        SharedPreferences.Editor curEd = current.edit();
-        curEd.putStringSet("routeList",routes);
+        Route rt = currRoute.get(routeName);;
+        rt.caught = true;
+        currRoute.put(routeName,rt);
+        setupRecyclerView((RecyclerView)findViewById(R.id.route_list));
 
-        curEd.commit();
     }
 
 public void openParty(View view){
@@ -249,12 +276,8 @@ public void openParty(View view){
 
 
     private void callRouteList(){
-        SharedPreferences global = getSharedPreferences("Current",0);
         int vers = global.getInt("recGame",0);
         String versName = global.getString("gameName","");
-        Log.d("versNo",vers+"");
-        Log.d("versName", versName);
-
 
         try {
             if (vers != 0) {
@@ -325,7 +348,6 @@ public void openParty(View view){
                     JSONArray locs = (JSONArray) regLocs.get("locations");
                     for (int i = 0; i<locs.length(); i++){
                         String rtName = locs.getJSONObject(i).getString("name");
-                        Log.d("Route", rtName);
                         Route newRt = new Route();
                         newRt.name = rtName;
                         if (saveFile.getStringSet("routeList", blank).contains(rtName)){

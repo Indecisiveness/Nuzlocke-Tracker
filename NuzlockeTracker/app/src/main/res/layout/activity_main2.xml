@@ -31,4 +31,14 @@
         android:onClick="addPokemon"
         app:srcCompat="@android:drawable/ic_input_add" />
 
+    <Button
+        android:id="@+id/toRoutes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start|left"
+        android:layout_marginLeft="6dp"
+        android:layout_marginBottom="6dp"
+        android:onClick="goRoutes"
+        android:text="Routes" />
+
 </android.support.design.widget.CoordinatorLayout>

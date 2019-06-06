@@ -18,7 +18,9 @@ import android.widget.RadioGroup;
 import java.util.HashSet;
 import java.util.TreeSet;
 
+import static com.example.nuzlocketracker.RouteDetailFragment.ARG_BOOL_ID;
 import static com.example.nuzlocketracker.RouteDetailFragment.ARG_ITEM_ID;
+import static com.example.nuzlocketracker.RouteDetailFragment.ARG_URL_ID;
 
 /**
  * An activity representing a single Route detail screen. This
@@ -64,6 +66,8 @@ public class RouteDetailActivity extends AppCompatActivity {
             Bundle arguments = new Bundle();
             arguments.putString(ARG_ITEM_ID,
                     getIntent().getStringExtra(ARG_ITEM_ID));
+            arguments.putString(ARG_URL_ID,getIntent().getStringExtra(ARG_URL_ID));
+            arguments.putBoolean(ARG_BOOL_ID,getIntent().getBooleanExtra(ARG_BOOL_ID,false));
             RouteDetailFragment fragment = new RouteDetailFragment();
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()
@@ -82,10 +86,15 @@ public class RouteDetailActivity extends AppCompatActivity {
         HashSet<String> pokemon = new HashSet<>();
         HashSet<String> routes = new HashSet<>();
 
+        HashSet<String> livePoke = new HashSet<>();
+
         pokemon.addAll(saveFile.getStringSet("catches", empty));
+        livePoke.addAll(saveFile.getStringSet("live",empty));
+
         RadioGroup pokeRadio = (RadioGroup) findViewById(R.id.PokemonRadios);
-        RadioButton pickedPoke = (RadioButton) pokeRadio.getChildAt(pokeRadio.getCheckedRadioButtonId());
+        RadioButton pickedPoke = (RadioButton) pokeRadio.findViewById(pokeRadio.getCheckedRadioButtonId());
         pokemon.add(pickedPoke.getText().toString());
+        livePoke.add(pickedPoke.getText().toString());
 
         routes.addAll(saveFile.getStringSet("routeList", empty));
 
@@ -96,15 +105,15 @@ public class RouteDetailActivity extends AppCompatActivity {
         SharedPreferences.Editor saveEdit = saveFile.edit();
         saveEdit.putStringSet("catches",pokemon);
         saveEdit.putStringSet("routeList", routes);
+        saveEdit.putStringSet("live", livePoke);
 
         saveEdit.commit();
 
-        SharedPreferences current = getSharedPreferences("Current",0);
-        SharedPreferences.Editor curEd = current.edit();
-        curEd.putStringSet("catches",pokemon);
-        curEd.putStringSet("routeList",routes);
 
-        curEd.commit();
+        Intent goPoke = new Intent(this, PokemonDetailScreen.class);
+        goPoke.putExtra("name",pickedPoke.getText().toString());
+        startActivity(goPoke);
+
 
     }
 
@@ -123,11 +132,6 @@ public class RouteDetailActivity extends AppCompatActivity {
 
         saveEdit.commit();
 
-        SharedPreferences current = getSharedPreferences("Current",0);
-        SharedPreferences.Editor curEd = current.edit();
-        curEd.putStringSet("routeList",routes);
-
-        curEd.commit();
     }
 
 

@@ -279,22 +279,30 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/pokeName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="NameHere"
-        app:layout_constraintBottom_toBottomOf="@id/release"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <LinearLayout
         android:id="@+id/evoLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintLeft_toRightOf="@id/pokeName"
         app:layout_constraintRight_toLeftOf="@id/release"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/ToBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="goBox"
+        android:text="Box"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/ToRoutes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="goRoutes"
+        android:text="Routes"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ToBox" />
 
 </android.support.constraint.ConstraintLayout>

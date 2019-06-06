@@ -97,8 +97,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id){
         SharedPreferences page = getPreferences(0);
         SharedPreferences.Editor gEdit = page.edit();
-        Log.d("Selected", parent.getItemAtPosition(pos).toString());
-        Log.d("Selected", pos+"");
 
 
         if (parent.getId() == R.id.VersionSpinner) {
@@ -106,11 +104,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             gEdit.putString("GameName", parent.getItemAtPosition(pos).toString());
         }
         if (parent.getId() == R.id.FileOpener){
-            Log.d("FileName", parent.getItemAtPosition(pos).toString());
             gEdit.putString("FileName", parent.getItemAtPosition(pos).toString());
             SharedPreferences file = getSharedPreferences(parent.getItemAtPosition(pos).toString(),0);
-            Log.d("FileDeets",file.getAll().toString());
-
         }
 
         gEdit.commit();
@@ -124,7 +119,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         EditText nameBox = (EditText) findViewById(R.id.editText);
         Editable name = nameBox.getText();
 
-        Log.d("Name", name.toString());
 
         if (!name.toString().equals("Name")) {
             SharedPreferences global = getSharedPreferences("Current", 0);
@@ -179,8 +173,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         newGlobal.putString("recent", openFile.getString("name", "MyName"));
         newGlobal.putInt("recGame", openFile.getInt("gameNo", 0));
         newGlobal.putString("gameName", openFile.getString("GameName",""));
-        newGlobal.putStringSet("catches", openFile.getStringSet("catches", empty));
-        newGlobal.putStringSet("routeList", openFile.getStringSet("routeList", empty));
         newGlobal.commit();
 
     }
@@ -206,7 +198,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     for (int i = 0; i<versArray.length(); i++){
                         String s = (String) versArray.getJSONObject(i).get("name");
                         versList.add(s);
-                        Log.d("versions", s);
                     }
                     if (!versions.isNull("next")){
                         new RESTCall().execute(new URL((String)versions.get("next")));

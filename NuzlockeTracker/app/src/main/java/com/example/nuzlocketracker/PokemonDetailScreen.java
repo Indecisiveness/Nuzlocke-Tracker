@@ -1,5 +1,6 @@
 package com.example.nuzlocketracker;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -22,15 +24,32 @@ import org.w3c.dom.Text;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class PokemonDetailScreen extends AppCompatActivity {
 
+    private class LevelMove implements Comparable<LevelMove>{
+        String name;
+        int level;
+
+        @Override
+        public int compareTo(LevelMove o) {
+            if (Integer.compare(this.level,o.level)!=0){
+                return Integer.compare(this.level,o.level);
+            }
+            else {
+                return this.name.compareTo(o.name);
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,12 +58,21 @@ public class PokemonDetailScreen extends AppCompatActivity {
 
         String pokeName = getIntent().getStringExtra("name");
 
-        TextView nameBox = findViewById(R.id.pokeName);
-        nameBox.setText(pokeName);
+        setTitle(pokeName);
 
 
         new pokeDeets().execute(pokeName);
 
+    }
+
+    public void goBox (View v){
+        Intent boxMove = new Intent(this,Main2Activity.class);
+        startActivity(boxMove);
+    }
+
+    public void goRoutes(View v){
+        Intent routeMove = new Intent(this, RouteListActivity.class);
+        startActivity(routeMove);
     }
 
     private void populateMoves(HashMap<String, ArrayList<String>> moveMap){
@@ -57,13 +85,19 @@ public class PokemonDetailScreen extends AppCompatActivity {
         TableLayout machineTable = findViewById(R.id.pokeMachineMoves);
         TableLayout tutorTable = findViewById(R.id.pokeTutorMoves);
 
+        SortedSet<LevelMove> levelMoves = Collections.synchronizedSortedSet(new TreeSet<LevelMove>());
+        for (int i = 0; i<levelUp.size(); i++){
+            LevelMove myMove = new LevelMove();
+            myMove.name = levelUp.get(i);
+            myMove.level = Integer.parseInt(moveLevels.get(i));
+            levelMoves.add(myMove);
+        }
 
+        int len = levelMoves.size();
 
-        int len = levelUp.size();
-
-        for (int i = 0; i<len; i++){
-            String level = moveLevels.get(i);
-            String moveName = levelUp.get(i);
+        for (LevelMove thisMove:levelMoves){
+            String level = Integer.toString(thisMove.level);
+            String moveName = thisMove.name;
 
             TextView nameBox = new TextView(this);
             nameBox.setText(moveName);
@@ -107,13 +141,52 @@ public class PokemonDetailScreen extends AppCompatActivity {
 
         HashSet<String> deceased = new HashSet<>();
 
+        HashSet<String> livePokes = new HashSet<>();
+
         deceased.addAll(saveFile.getStringSet("deaths",deceased));
+        livePokes.addAll(saveFile.getStringSet("live",livePokes));
 
         deceased.add(getIntent().getStringExtra("name"));
+        livePokes.remove(getIntent().getStringExtra("name"));
 
         SharedPreferences.Editor saveEd = saveFile.edit();
         saveEd.putStringSet("deaths",deceased);
+        saveEd.putStringSet("live",livePokes);
         saveEd.commit();
+
+        Intent backPage = new Intent(this, Main2Activity.class);
+        startActivity(backPage);
+
+    }
+
+    public void goPokemon(View v){
+        Button b = (Button)v;
+        String name = b.getText().toString();
+
+        SharedPreferences global = getSharedPreferences("Current",0);
+        SharedPreferences saveFile = getSharedPreferences(global.getString("recent",""),0);
+
+
+        HashSet<String> captures = new HashSet<>();
+        HashSet<String> livePokes = new HashSet<>();
+
+        captures.addAll(saveFile.getStringSet("catches",captures));
+        livePokes.addAll(saveFile.getStringSet("live",livePokes));
+
+        captures.add(name.toLowerCase());
+        livePokes.remove(getIntent().getStringExtra("name"));
+        livePokes.add(name);
+
+        SharedPreferences.Editor savEd = saveFile.edit();
+
+        savEd.putStringSet("catches",captures);
+        savEd.putStringSet("live",livePokes);
+        savEd.commit();
+
+
+        Intent goPoke = new Intent(this,PokemonDetailScreen.class);
+        goPoke.putExtra("name",name);
+        startActivity(goPoke);
     }
 
     private void populateStats(int[] stats){
@@ -133,8 +206,6 @@ public class PokemonDetailScreen extends AppCompatActivity {
 
     private void populateEvo(HashMap<String,String[]> evoMap){
         Set<String> names = evoMap.keySet();
-
-        Log.d("Names", names.toString());
 
         LinearLayout evoTable = findViewById(R.id.evoLayout);
 
@@ -156,17 +227,28 @@ public class PokemonDetailScreen extends AppCompatActivity {
             if (evoCond[0]!=null && evoCond[0].equals("Basic")){
                 basicUsed = true;
                 TableRow pokeRow = new TableRow(this);
-                TextView pokeName = new TextView(this);
+                Button pokeName = new Button(this);
                 pokeName.setText(name);
+                pokeName.setOnClickListener(new View.OnClickListener(){
+                    public void onClick(View v){
+                        goPokemon(v);
+                    }
+                });
 
                 pokeRow.addView(pokeName);
                 basic.addView(pokeRow);
             }
             else {
                    TableRow pokeRow = new TableRow(this);
-                   TextView pokeName = new TextView(this);
+                   Button pokeName = new Button(this);
+                    pokeName.setOnClickListener(new View.OnClickListener(){
+                        public void onClick(View v){
+                            goPokemon(v);
+                        }
+                    });
+
                    TextView method = new TextView(this);
-                   pokeName.setText(name+"    ");
+                   pokeName.setText(name);
 
                     String s = "";
                     if (evoCond[16]!=null && evoCond[16].equals("level-up")){
@@ -352,9 +434,7 @@ public class PokemonDetailScreen extends AppCompatActivity {
                             methodName = method.getJSONObject("move_learn_method").getString("name");
                             if(methodName.equals("level-up")){
                                 level = method.getInt("level_learned_at");
-                                Log.d("MoveLevel", Integer.toString(level));
                                 moveLevels.add(Integer.toString(level));
-                                Log.d("moveName", move.getJSONObject("move").getString("name"));
                                 levelUp.add(move.getJSONObject("move").getString("name"));
                             }
                             if(methodName.equals("tutor")){
@@ -408,7 +488,6 @@ public class PokemonDetailScreen extends AppCompatActivity {
                         scanner.close();
                         JSONObject evoObject = new JSONObject(jString);
                         JSONObject allSpecies = evoObject.getJSONObject("chain");
-                        Log.d("basicName",allSpecies.getJSONObject("species").getString("name"));
 
                         String[] basic = new String[1];
                         basic[0] = "Basic";
@@ -417,7 +496,6 @@ public class PokemonDetailScreen extends AppCompatActivity {
                         JSONArray evoObj = allSpecies.getJSONArray("evolves_to");
                         for(int i = 0; i<evoObj.length(); i++){
                             JSONObject evoLink = evoObj.getJSONObject(i);
-                            Log.d("stage1",evoLink.getJSONObject("species").getString("name"));
                             JSONObject evoMethod = evoLink.getJSONArray("evolution_details").getJSONObject(0);
                             String[] method = new String[19];
                             if (!evoMethod.isNull("gender")) {

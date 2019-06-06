@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -25,7 +26,10 @@ import org.w3c.dom.Text;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -42,6 +46,7 @@ public class RouteDetailFragment extends Fragment {
      */
     public static final String ARG_ITEM_ID = "item_id";
     public static final String ARG_URL_ID = "item_url";
+    public static final String ARG_BOOL_ID = "item_bool";
 
     private SharedPreferences global;
     private SharedPreferences saveFile;
@@ -53,15 +58,15 @@ public class RouteDetailFragment extends Fragment {
 
     }
 
-    private class Pokemon{
-        String name;
-        String pokURL;
-    }
+    private SortedSet<String> pokemon =  Collections.synchronizedSortedSet(new TreeSet<String>());
+    private ArrayList<String>[] pokeFloors;
 
     /**
      * The dummy content this fragment is presenting.
      */
     private Route mItem;
+
+    private boolean caught;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -97,6 +102,10 @@ public class RouteDetailFragment extends Fragment {
             String itemURL = (getArguments().getString(ARG_URL_ID));
             populate(itemURL);
         }
+        if (getArguments().containsKey(ARG_BOOL_ID)){
+            caught = getArguments().getBoolean(ARG_BOOL_ID);
+
+        }
     }
 
     @Override
@@ -120,27 +129,40 @@ public class RouteDetailFragment extends Fragment {
         }
     }
 
-    private void fillBox(ArrayList<Pokemon> pokeList){
-        RadioGroup pokeRadio = (RadioGroup) getActivity().findViewById(R.id.PokemonRadios);
-        HashSet<String> pokemon = new HashSet<>();
-        RadioGroup alreadyGot = (RadioGroup) getActivity().findViewById(R.id.AlreadyGot);
 
-        if (pokeList == null){
-            return;
+    private void fillBox(){
+        Log.d("RDF", "fillBox");
+
+        RadioGroup pokeRadio = (RadioGroup) getActivity().findViewById(R.id.PokemonRadios);
+        RadioGroup alreadyGot = (RadioGroup) getActivity().findViewById(R.id.AlreadyGot);
+        SortedSet<String> currPokes =  Collections.synchronizedSortedSet(new TreeSet<String>());
+
+        for (ArrayList<String> s:pokeFloors) {
+            currPokes.addAll(s);
         }
-        for (Pokemon p:pokeList){
-            RadioButton pokeRad = new RadioButton(getActivity());
-            pokeRad.setId(View.generateViewId());
-            pokeRad.setText(p.name);
-            if (saveFile.getStringSet("catches",pokemon).contains(p.name)){
-                pokeRad.setClickable(false);
-                pokeRad.setPaintFlags(pokeRad.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-                alreadyGot.addView(pokeRad);
-            }
-            else {
-                pokeRadio.addView(pokeRad);
+
+        for (String p:currPokes){
+            if (!pokemon.contains(p)) {
+                RadioButton pokeRad = new RadioButton(getActivity());
+                pokeRad.setId(View.generateViewId());
+                pokeRad.setText(p);
+                if (saveFile.getStringSet("catches", pokemon).contains(p)) {
+                    pokeRad.setClickable(false);
+                    pokeRad.setPaintFlags(pokeRad.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                    alreadyGot.addView(pokeRad);
+                } else {
+                    pokeRadio.addView(pokeRad);
+                }
             }
         }
+
+        pokemon = currPokes;
+
+        if (caught){
+            Button capture = getActivity().findViewById(R.id.addPoke);
+            capture.setClickable(false);
+        }
+
     }
 
 
@@ -168,12 +190,6 @@ public class RouteDetailFragment extends Fragment {
 
         saveEdit.commit();
 
-        SharedPreferences current = getActivity().getSharedPreferences("Current",0);
-        SharedPreferences.Editor curEd = current.edit();
-        curEd.putStringSet("catches",pokemon);
-        curEd.putStringSet("routeList",routes);
-
-        curEd.commit();
 
     }
 
@@ -192,11 +208,6 @@ public class RouteDetailFragment extends Fragment {
 
         saveEdit.commit();
 
-        SharedPreferences current = getActivity().getSharedPreferences("Current",0);
-        SharedPreferences.Editor curEd = current.edit();
-        curEd.putStringSet("routeList",routes);
-
-        curEd.commit();
     }
 
 
@@ -213,7 +224,6 @@ public class RouteDetailFragment extends Fragment {
                     JSONObject locData = new JSONObject(allLocs);
                     JSONArray areaData = (JSONArray) locData.get("areas");
                     for (int i = 0; i < areaData.length(); i++) {
-                        Log.d("area", areaData.getJSONObject(i).getString("name"));
                         new EncountRESTCall().execute(new URL(areaData.getJSONObject(i).getString("url")));
                     }
                     if (!locData.isNull("next")) {
@@ -221,7 +231,6 @@ public class RouteDetailFragment extends Fragment {
                     }
                 }
             } catch (Exception e) {
-                Log.d("Error", e.getMessage());
             } finally {
                 return null;
             }
@@ -232,10 +241,10 @@ public class RouteDetailFragment extends Fragment {
         }
     }
 
-    private class EncountRESTCall extends AsyncTask<URL, Void, ArrayList<Pokemon>> {
+    private class EncountRESTCall extends AsyncTask<URL, Void, ArrayList<String>> {
         @Override
-        protected ArrayList<Pokemon> doInBackground(URL... routeURL) {
-            ArrayList<Pokemon> pokemonList = new ArrayList<>();
+        protected ArrayList<String> doInBackground(URL... routeURL) {
+            ArrayList<String> pokemonList = new ArrayList<>();
             String version = global.getString("gameName", "");
             try {
                 HttpsURLConnection encountCon = (HttpsURLConnection) routeURL[0].openConnection();
@@ -251,7 +260,6 @@ public class RouteDetailFragment extends Fragment {
                         JSONObject pokemon = encounterData.getJSONObject(i);
                         boolean versionMatch = false;
                         JSONArray versionDetails = (JSONArray) pokemon.get("version_details");
-                        Log.d("arrayLength", versionDetails.length()+"");
                         for (int j = 0; j < versionDetails.length(); j++) {
                             JSONObject versionDetailsItem = (JSONObject) versionDetails.getJSONObject(j).get("version");
                             if (version.equals(versionDetailsItem.get("name").toString())) {
@@ -259,17 +267,13 @@ public class RouteDetailFragment extends Fragment {
                                 j = versionDetails.length();
                             }
                         }
-                        Log.d("Boolean",Boolean.toString(versionMatch));
                         if (versionMatch) {
 
                             JSONObject jsonPokemon = (JSONObject) pokemon.get("pokemon");
-                            Log.d("Pokemon",jsonPokemon.getString("name"));
 
-                            Pokemon pokemonObject = new Pokemon();
-                            pokemonObject.name = jsonPokemon.getString("name");
-                            pokemonObject.pokURL = jsonPokemon.getString("url");
+                            String pokeName = jsonPokemon.getString("name");
 
-                            pokemonList.add(pokemonObject);
+                            pokemonList.add(pokeName);
                         }
                     }
                     if (!locData.isNull("next")) {
@@ -284,10 +288,24 @@ public class RouteDetailFragment extends Fragment {
         }
 
             @Override
-            protected void onPostExecute (ArrayList<Pokemon> pokeList){
-                fillBox(pokeList);
+            protected void onPostExecute (ArrayList<String> pokeList) {
+                if (pokeFloors == null) {
+                    pokeFloors = new ArrayList[1];
+                    pokeFloors[0] = pokeList;
+                } else {
+                    int len = pokeFloors.length;
+                    ArrayList<String>[] newFloors = new ArrayList[len + 1];
+                    for (int i = 0; i < len; i++) {
+                        newFloors[i] = pokeFloors[i];
+                    }
+                    newFloors[len] = pokeList;
+                    pokeFloors = newFloors;
+                }
+                fillBox();
             }
 
         }
 
+
 }
+
