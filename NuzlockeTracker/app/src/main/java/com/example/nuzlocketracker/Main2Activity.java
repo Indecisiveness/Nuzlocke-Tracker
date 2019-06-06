@@ -1,9 +1,12 @@
 package com.example.nuzlocketracker;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.resources.TextAppearance;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -61,6 +64,12 @@ public class Main2Activity extends AppCompatActivity {
         startActivity(goPoke);
     }
 
+    public void addPokemon(View v){
+
+
+    }
+
+
     private void fillSpace(){
         LinearLayout myBox = findViewById(R.id.PokeContainer);
         SharedPreferences global = getSharedPreferences("Current", 0);
@@ -83,8 +92,10 @@ public class Main2Activity extends AppCompatActivity {
         }
 
         for (String name:deadPokenames){
-            TextView deadPoke = new TextView(this);
+            Button deadPoke = new Button(this);
             deadPoke.setText(name);
+            deadPoke.setBackgroundColor(Color.RED);
+            deadPoke.setActivated(false);
             myBox.addView(deadPoke);
         }
 
