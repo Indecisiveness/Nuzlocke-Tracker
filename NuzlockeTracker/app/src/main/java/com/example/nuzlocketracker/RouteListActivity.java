@@ -114,7 +114,7 @@ public class RouteListActivity extends AppCompatActivity {
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
 
         private final RouteListActivity mParentActivity;
-        private final Route[] mValues;
+        private final SortedSet<String> mValues;
         private final boolean mTwoPane;
         private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
             @Override
@@ -147,8 +147,8 @@ public class RouteListActivity extends AppCompatActivity {
         SimpleItemRecyclerViewAdapter(RouteListActivity parent,
                                       HashMap<String,Route> routes,
                                       boolean twoPane) {
-            Route[] allRoutes = new Route[routes.size()];
-            mValues = routes.values().toArray(allRoutes);
+            mValues = new TreeSet<String>();
+            mValues.addAll(routes.keySet());
             mParentActivity = parent;
             mTwoPane = twoPane;
         }
@@ -162,9 +162,11 @@ public class RouteListActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
+            Object[] myRoutes = mValues.toArray();
 
+            HashMap<String,Route> currRoute = mParentActivity.currRoute;
 
-            char[] cleanText = mValues[position].name.toCharArray();
+            char[] cleanText = myRoutes[position].toString().toCharArray();
             cleanText[0] = Character.toUpperCase(cleanText[0]);
             for (int i = 0; i<cleanText.length;i++){
                 if (cleanText[i] == '-'){
@@ -176,7 +178,7 @@ public class RouteListActivity extends AppCompatActivity {
 
             holder.mIdView.setText(new String(cleanText));
 
-            if (mValues[position].caught){
+            if (currRoute.get(myRoutes[position]).caught){
                 holder.mContentView.setChecked(true);
             }
             else {
@@ -185,14 +187,17 @@ public class RouteListActivity extends AppCompatActivity {
 
 
 
-            holder.itemView.setTag(mValues[position]);
+            holder.itemView.setTag(currRoute.get(myRoutes[position]));
             holder.itemView.setOnClickListener(mOnClickListener);
         }
 
         @Override
         public int getItemCount() {
-            return mValues.length;
+            return mValues.size();
         }
+
+        
+
 
         class ViewHolder extends RecyclerView.ViewHolder {
             final TextView mIdView;
